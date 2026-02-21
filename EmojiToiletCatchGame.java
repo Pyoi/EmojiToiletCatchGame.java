@@ -30,10 +30,10 @@ public class EmojiToiletCatchGame {
         private boolean gameOver = false;
         private int flushedCount = 0;
 
-        // 便器
+        // 便器　※速度少し上げた
         private double toiletX;
         private final double toiletY;
-        private final double toiletSpeed = 7;
+        private final double toiletSpeed = 11;
 
         // 鳩
         private double pigeonX;
@@ -155,7 +155,7 @@ public class EmojiToiletCatchGame {
 
             // うんち落下
             if (poopActive) {
-                poopVy += 0.35; // 重力
+                poopVy += 0.17; // 少し遅くしたバランス調整
                 poopY  += poopVy;
 
                 // キャッチの判定はこちら
