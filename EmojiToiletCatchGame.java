@@ -24,7 +24,7 @@ public class EmojiToiletCatchGame {
     static class GamePanel extends JPanel {
         // 画面サイズ
         private final int W, H;
-        private final int groundY; // 地面の境界（ここを越えたら失敗）
+        private final int groundY; // 地面の落下失敗ライン
 
         // ゲーム状態
         private boolean gameOver = false;
@@ -50,11 +50,11 @@ public class EmojiToiletCatchGame {
         private final Random rnd = new Random();
         private Timer timer;
 
-        // 絵文字表示用フォント（環境依存/表示できない場合はOSが代）
+        // フォント
         private final Font emojiFont = new Font("SansSerif", Font.PLAIN, 40);
         private final Font uiFont = new Font("SansSerif", Font.BOLD, 24);
 
-        // 背景絵文字（固定）
+        // 背景絵文字
         private final String CLOUD = "☁️";
         private final String TREE  = "🌲";
         private final String MOUNTAIN = "⛰️";
@@ -64,10 +64,14 @@ public class EmojiToiletCatchGame {
         private final String POOP   = "💩";
         private final String TOILET = "🚽";
 
-        // 難易度調整
-        private final int spawnCheckIntervalFrames = 20; // 何フレームごとに出現判定するか
+        // 難易度
+        private final int spawnCheckIntervalFrames = 20;
         private int frameCount = 0;
-        private double spawnChance = 0.25; // 判定時に鳩が出る確率（poopが無い時だけ）
+        private double spawnChance = 0.25;
+
+        // 入力
+        private boolean leftDown = false;
+        private boolean rightDown = false;
 
         GamePanel(int w, int h) {
             this.W = w;
@@ -75,12 +79,10 @@ public class EmojiToiletCatchGame {
             setPreferredSize(new Dimension(W, H));
             setFocusable(true);
 
-            // 地面の高さ（地面は下から150px）
             int groundHeight = 150;
             this.groundY = H - groundHeight;
 
-            // 便器初期位置
-            this.toiletY = groundY + 40; // 地面の少し上に見える位置
+            this.toiletY = groundY + 40;
             this.toiletX = W / 2.0;
 
             setupKeyBindings();
@@ -93,7 +95,6 @@ public class EmojiToiletCatchGame {
         }
 
         private void setupKeyBindings() {
-            // SwingはKeyListenerより Key Bindings
             InputMap im = getInputMap(WHEN_IN_FOCUSED_WINDOW);
             ActionMap am = getActionMap();
 
@@ -122,9 +123,6 @@ public class EmojiToiletCatchGame {
             });
         }
 
-        private boolean leftDown = false;
-        private boolean rightDown = false;
-
         private void resetGame() {
             gameOver = false;
             flushedCount = 0;
@@ -140,28 +138,27 @@ public class EmojiToiletCatchGame {
                 return;
             }
 
-            // 便器移動
+            // 便器移動、左右
             if (leftDown)  toiletX -= toiletSpeed;
             if (rightDown) toiletX += toiletSpeed;
 
-            // 便器の範囲
+            // 便器の範囲制限
             toiletX = Math.max(20, Math.min(W - 60, toiletX));
 
-            // 鳩＆うんち出現
+            // 鳩＆うんちが出る
             frameCount++;
             if (!poopActive && frameCount % spawnCheckIntervalFrames == 0) {
-                // ランダムに鳩を出す
                 if (rnd.nextDouble() < spawnChance) {
                     spawnPigeonAndPoop();
                 }
             }
 
-            // うんち落下処理
+            // うんち落下
             if (poopActive) {
-                poopVy += 0.25;      // 重力
+                poopVy += 0.25; // 重力
                 poopY  += poopVy;
 
-                // 当たり判定（便器でキャッチ）
+                // キャッチの判定はこちら
                 if (checkCatch()) {
                     poopActive = false;
                     pigeonVisible = false;
@@ -180,11 +177,9 @@ public class EmojiToiletCatchGame {
         private void spawnPigeonAndPoop() {
             pigeonVisible = true;
 
-            // 鳩の位置（画面上部、左右ランダム）
             pigeonX = 50 + rnd.nextInt(W - 100);
             pigeonY = 80;
 
-            // うんち初期位置
             poopActive = true;
             poopX = pigeonX + 10;
             poopY = pigeonY + 35;
@@ -192,10 +187,8 @@ public class EmojiToiletCatchGame {
         }
 
         private boolean checkCatch() {
-            // 絵文字は「文字」なので厳密な当たりは難しいので「便」宜上
             Rectangle poopRect = new Rectangle((int)poopX, (int)poopY, 36, 36);
             Rectangle toiletRect = new Rectangle((int)toiletX, (int)(toiletY - 30), 60, 60);
-
             return poopRect.intersects(toiletRect);
         }
 
@@ -208,11 +201,11 @@ public class EmojiToiletCatchGame {
             g2.setColor(new Color(90, 200, 255));
             g2.fillRect(0, 0, W, H);
 
-            // 地面
-            g2.setColor(new Color(170, 240, 160));
+            // 地面：草原
+            g2.setColor(new Color(120, 200, 120));
             g2.fillRect(0, groundY, W, H - groundY);
 
-            // 背景絵文字（雲・木・山）
+            // 背景絵文字
             g2.setFont(emojiFont);
             drawEmoji(g2, CLOUD, 60,  80);
             drawEmoji(g2, CLOUD, 500, 90);
@@ -220,25 +213,25 @@ public class EmojiToiletCatchGame {
             drawEmoji(g2, TREE,  500, groundY - 20);
             drawEmoji(g2, MOUNTAIN, 280, groundY - 10);
 
-            // 鳩
+            // 鳩（灰色フチ）
             if (pigeonVisible) {
-                drawEmoji(g2, PIGEON, (int)pigeonX, (int)pigeonY);
+                drawPigeon(g2, PIGEON, (int)pigeonX, (int)pigeonY);
             }
 
-            // うんち
+            // うんち（茶色フチ）
             if (poopActive) {
-                drawEmoji(g2, POOP, (int)poopX, (int)poopY);
+                drawPoop(g2, POOP, (int)poopX, (int)poopY);
             }
 
-            // 便器
-            drawEmoji(g2, TOILET, (int)toiletX, (int)toiletY);
+            // 便器（背景つき）
+            drawToiletWithHighlight(g2, TOILET, (int)toiletX, (int)toiletY);
 
-            // 右上スコア点数
+            // 右上スコア
             g2.setFont(uiFont);
             g2.setColor(Color.WHITE);
             g2.drawString(String.format("流した数 %03d", flushedCount), W - 200, 40);
 
-            // ゲームオーバー時の、表示
+            // ゲームオーバー
             if (gameOver) {
                 g2.setColor(new Color(0, 0, 0, 160));
                 g2.fillRect(0, 0, W, H);
@@ -255,8 +248,53 @@ public class EmojiToiletCatchGame {
             }
         }
 
+
+
         private void drawEmoji(Graphics2D g2, String s, int x, int y) {
-            // 絵文字なので、見た目がズレる場合あり。そのうち手書きするかも
+            g2.drawString(s, x, y);
+        }
+
+        // 💩：茶色アウトライン（8方向）
+        private void drawPoop(Graphics2D g2, String s, int x, int y) {
+            Color outline = new Color(90, 40, 0); // 濃茶
+            drawOutlinedEmoji(g2, s, x, y, outline);
+        }
+
+        // 🕊：灰色アウトライン（8方向）
+        private void drawPigeon(Graphics2D g2, String s, int x, int y) {
+            Color outline = new Color(120, 120, 120); // 灰色
+            drawOutlinedEmoji(g2, s, x, y, outline);
+        }
+
+        // 🚽：背景ハイライト＋絵文字
+        private void drawToiletWithHighlight(Graphics2D g2, String s, int x, int y) {
+            // 半透明の黒い下敷き（見えにくかったので改善）
+            g2.setColor(new Color(0, 0, 0, 120));
+            g2.fillRoundRect(x - 10, y - 40, 70, 70, 20, 20);
+
+            // 絵文字本体
+            g2.setColor(Color.WHITE); // ※絵文字自体の色はフォント依存
+            g2.drawString(s, x, y);
+        }
+
+        // 共通：アウトライン描画（8方向）
+        private void drawOutlinedEmoji(Graphics2D g2, String s, int x, int y, Color outlineColor) {
+            g2.setColor(outlineColor);
+
+            int d = 2;
+            // 4方向
+            g2.drawString(s, x - d, y);
+            g2.drawString(s, x + d, y);
+            g2.drawString(s, x, y - d);
+            g2.drawString(s, x, y + d);
+            // 斜4方向
+            g2.drawString(s, x - d, y - d);
+            g2.drawString(s, x + d, y - d);
+            g2.drawString(s, x - d, y + d);
+            g2.drawString(s, x + d, y + d);
+
+            // 本体
+            g2.setColor(Color.WHITE);
             g2.drawString(s, x, y);
         }
     }
