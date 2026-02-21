@@ -155,7 +155,7 @@ public class EmojiToiletCatchGame {
 
             // うんち落下
             if (poopActive) {
-                poopVy += 0.25; // 重力
+                poopVy += 0.35; // 重力
                 poopY  += poopVy;
 
                 // キャッチの判定はこちら
