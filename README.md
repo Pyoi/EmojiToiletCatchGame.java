@@ -5,6 +5,7 @@
 ターミナル（コマンドプロンプト）で、
 
 javac EmojiToiletCatchGame.java
+
 java EmojiToiletCatchGame
 
 または、
